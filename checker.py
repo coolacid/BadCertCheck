@@ -47,13 +47,13 @@ def CheckHost(address, roots):
         if cert.get_fingerprint("sha256").lower() in roots['fingerprints']:
             badcert = True
         try:
-            ki = cert.get_ext("subjectKeyIdentifier").get_value().replace(":", "").lower()
+            ki = cert.get_ext("authorityKeyIdentifier").get_value().replace(":", "").lower().strip().replace("keyid", "")
             if ki in roots['identifier']:
-                print "Found Bad KI"
+                print "Found Bad Authority Key Identifier"
                 badcert = True
         except LookupError:
             ki = ""
-        print "Subject: %s\nFingerprint: %s\nSerial: %02x\nSubject Key Identifier: %s\n" % (cert.get_subject().as_text(), cert.get_fingerprint("sha256"), cert.get_serial_number(), ki)
+        print "Subject: %s\nFingerprint: %s\nSerial: %02x\nAuthority Key Identifier: %s\n" % (cert.get_subject().as_text(), cert.get_fingerprint("sha256"), cert.get_serial_number(), ki)
 
     if badcert and not exclude:
         print "\n*** KNOWN BAD CERT IN THE CHAIN ***"
@@ -77,6 +77,6 @@ def LoadRoots():
 
 
 rootcas = LoadRoots()
-# pprint.pprint(rootcas)
+pprint.pprint(rootcas)
 CheckHost(address, rootcas)
 
