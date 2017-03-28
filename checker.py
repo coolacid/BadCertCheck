@@ -15,6 +15,7 @@ if len(args) != 1:
 else:
     address = args[0]
 
+# Keep a list of Excluded SHA256s
 excluded = [ 
         "c3f697a92a293d86f9a3ee7ccb970e20e0050b8728cc83ed1b996ce9005d4c36",
         "17f96609ac6ad0a2d6ab0a21b2d1b5b2946bd04dbf120703d1def6fb62f4b661",
@@ -25,6 +26,8 @@ excluded = [
         "d6e4e7b9af3bd5a8f2d6321cde26639c25644f7307ce16aad347d9ad53d3ce13"
         ]
 
+
+# Main function that checks an address
 def CheckHost(address, roots):
     context = M2Crypto.SSL.Context();
 #    context.set_allow_unknown_ca(True)
@@ -40,12 +43,20 @@ def CheckHost(address, roots):
     exclude = badcert = False
 
     print "Certificate Chain Presented by Server:"
+
+    # Iterate over each cert in the presented cert chain
     for cert in cert_chain:
+        # If the certs SHA256 is in the excluded list, we can just assume we're going to be fine
         if cert.get_fingerprint("sha256").lower() in excluded:
-            print "Excluded"
+            print "Excluded Cert"
             exclude = True
+
+        # If the certs SHA256 is in the list of Bad figureprints, we know it's a bad cert in the chain
         if cert.get_fingerprint("sha256").lower() in roots['fingerprints']:
             badcert = True
+
+        # For each cert, check it's Authority Key Identifier, if that ID is in the bad Subject Identifier List, then this cert is signed by a bad cert. 
+        # Keep in mind, the cert present in the certificate chain MAY NOT BE the correct cert expected by browsers, so, we check this here
         try:
             ki = cert.get_ext("authorityKeyIdentifier").get_value().replace(":", "").lower().strip().replace("keyid", "")
             if ki in roots['identifier']:
@@ -53,6 +64,7 @@ def CheckHost(address, roots):
                 badcert = True
         except LookupError:
             ki = ""
+
         print "Subject: %s\nFingerprint: %s\nSerial: %02x\nAuthority Key Identifier: %s\n" % (cert.get_subject().as_text(), cert.get_fingerprint("sha256"), cert.get_serial_number(), ki)
 
     if badcert and not exclude:
@@ -64,6 +76,7 @@ def CheckHost(address, roots):
 def LoadRoots():
     certfp = []
     certki = []
+    # Iterate over all the certs in roots and compile a list of SHA256s and Subject Key Identifiers
     for filename in os.listdir('roots'):
         if filename.endswith("pem"):
             cert = M2Crypto.X509.load_cert("roots/%s" % filename)
@@ -75,8 +88,6 @@ def LoadRoots():
 
     return {"fingerprints": certfp, "identifier": certki}
 
-
 rootcas = LoadRoots()
 # pprint.pprint(rootcas)
 CheckHost(address, rootcas)
-
