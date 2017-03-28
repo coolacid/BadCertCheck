@@ -1,6 +1,7 @@
 import M2Crypto
 import roots
 from optparse import OptionParser
+from M2Crypto.SSL.Checker import WrongHost
 
 usage = "Usage: %prog HOSTNAME"
 parser = OptionParser(usage)
@@ -21,7 +22,10 @@ context.set_allow_unknown_ca(True)
 context.set_verify(M2Crypto.SSL.verify_none, True)
 
 conn = M2Crypto.SSL.Connection(context)
-conn.connect((address, 443))
+try:
+    conn.connect((address, 443))
+except WrongHost as e:
+    print "ERROR:\n%s\n" % e
 
 cert_chain = conn.get_peer_cert_chain()
 badcert = False
