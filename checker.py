@@ -33,5 +33,7 @@ for cert in cert_chain:
 
 if badcert:
     print "\n\nKNOWN BAD CERT IN THE CHAIN"
+else:
+    print "\n\nAll Clear"
 
 
