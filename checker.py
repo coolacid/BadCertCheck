@@ -15,6 +15,16 @@ if len(args) != 1:
 else:
     address = args[0]
 
+excluded = [ 
+        "c3f697a92a293d86f9a3ee7ccb970e20e0050b8728cc83ed1b996ce9005d4c36",
+        "17f96609ac6ad0a2d6ab0a21b2d1b5b2946bd04dbf120703d1def6fb62f4b661",
+        "3db76d1dd7d3a759dccc3f8fa7f68675c080cb095e4881063a6b850fdd68b8bc",
+        "6115f06a338a649e61585210e76f2ece3989bca65a62b066040cd7c5f408edd0",
+        "904fb5a437754b1b32b80ebae7416db63d05f56a9939720b7c8e3dcc54f6a3d1",
+        "ac2b922ecfd5e01711772fea8ed372de9d1e2245fce3f57a9cdbec77296a424b",
+        "d6e4e7b9af3bd5a8f2d6321cde26639c25644f7307ce16aad347d9ad53d3ce13"
+        ]
+
 def CheckHost(address, roots):
     context = M2Crypto.SSL.Context();
 #    context.set_allow_unknown_ca(True)
@@ -27,10 +37,13 @@ def CheckHost(address, roots):
         print "WARNING: %s\n" % e
 
     cert_chain = conn.get_peer_cert_chain()
-    badcert = False
+    exclude = badcert = False
 
     print "Certificate Chain Presented by Server:"
     for cert in cert_chain:
+        if cert.get_fingerprint("sha256").lower() in excluded:
+            print "Excluded"
+            exclude = True
         if cert.get_fingerprint("sha256").lower() in roots['fingerprints']:
             badcert = True
         try:
@@ -42,7 +55,7 @@ def CheckHost(address, roots):
             ki = ""
         print "Subject: %s\nFingerprint: %s\nSerial: %02x\nSubject Key Identifier: %s\n" % (cert.get_subject().as_text(), cert.get_fingerprint("sha256"), cert.get_serial_number(), ki)
 
-    if badcert:
+    if badcert and not exclude:
         print "\n*** KNOWN BAD CERT IN THE CHAIN ***"
     else:
         print "\nAll Clear"
