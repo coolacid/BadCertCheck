@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 import M2Crypto, os, pprint
 from optparse import OptionParser
 from M2Crypto.SSL.Checker import WrongHost
@@ -10,7 +12,7 @@ parser = OptionParser(usage)
 (options, args) = parser.parse_args()
 
 if len(args) != 1:
-    print "HOSTNAME not supplied, using google"
+    print "WARNING: HOSTNAME not supplied, using www.google.com\n\n"
     address = "www.google.com"
 else:
     address = args[0]
