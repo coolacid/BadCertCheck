@@ -16,10 +16,9 @@ if len(args) != 1:
 else:
     address = args[0]
 
-
 context = M2Crypto.SSL.Context();
-context.set_allow_unknown_ca(True)
-context.set_verify(M2Crypto.SSL.verify_none, True)
+# context.set_allow_unknown_ca(True)
+# context.set_verify(M2Crypto.SSL.verify_none, True)
 
 conn = M2Crypto.SSL.Connection(context)
 try:
@@ -32,7 +31,7 @@ badcert = False
 
 print "Certificate Chain:"
 for cert in cert_chain:
-    print "Subject: %s\nFingerprint: %s\n" % (cert.get_subject().as_text(), cert.get_fingerprint("sha256"))
+    print "Subject: %s\nFingerprint: %s\nSerial: %02x\n" % (cert.get_subject().as_text(), cert.get_fingerprint("sha256"), cert.get_serial_number())
     if cert.get_fingerprint("sha256").lower() in roots.roots:
         badcert = True
 

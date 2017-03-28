@@ -1,4 +1,8 @@
 # BadCertCheck
+
+-- X509 is Hard -- 
+This only checks the certs provided by the remote server. This means, if the server sends a (valid) cert chain that is different then the OS chain (which happens) this will return a "All OK" where OS and Chrome would fail. See #1
+
 Check for possible EV Cert Problems
 
 Google has announced their intention to de-trust certs from Symantec CAs [See Here](https://groups.google.com/a/chromium.org/forum/m/#!msg/blink-dev/eUAKwjihhBs/rpxMXjZHCQAJ)
