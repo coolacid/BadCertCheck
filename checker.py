@@ -53,6 +53,7 @@ def CheckHost(address, roots):
 
         # If the certs SHA256 is in the list of Bad figureprints, we know it's a bad cert in the chain
         if cert.get_fingerprint("sha256").lower() in roots['fingerprints']:
+            print "Found a Bad Cert"
             badcert = True
 
         # For each cert, check it's Authority Key Identifier, if that ID is in the bad Subject Identifier List, then this cert is signed by a bad cert. 
