@@ -77,6 +77,6 @@ def LoadRoots():
 
 
 rootcas = LoadRoots()
-pprint.pprint(rootcas)
+# pprint.pprint(rootcas)
 CheckHost(address, rootcas)
 
