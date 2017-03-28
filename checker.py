@@ -25,19 +25,20 @@ conn = M2Crypto.SSL.Connection(context)
 try:
     conn.connect((address, 443))
 except WrongHost as e:
-    print "ERROR:\n%s\n" % e
+    print "WARNING: %s\n" % e
 
 cert_chain = conn.get_peer_cert_chain()
 badcert = False
 
+print "Certificate Chain:"
 for cert in cert_chain:
-    print "%s: %s" % (cert.get_subject().as_text(), cert.get_fingerprint("sha256"))
+    print "Subject: %s\nFingerprint: %s\n" % (cert.get_subject().as_text(), cert.get_fingerprint("sha256"))
     if cert.get_fingerprint("sha256").lower() in roots.roots:
         badcert = True
 
 if badcert:
-    print "\n\nKNOWN BAD CERT IN THE CHAIN"
+    print "\n*** KNOWN BAD CERT IN THE CHAIN ***"
 else:
-    print "\n\nAll Clear"
+    print "\nAll Clear"
 
 
