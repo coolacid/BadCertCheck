@@ -36,6 +36,7 @@ def CheckHost(address, roots):
 #    context.set_verify(M2Crypto.SSL.verify_none, True)
 
     conn = M2Crypto.SSL.Connection(context)
+    conn.set_tlsext_host_name(address)
     try:
         conn.connect((address, 443))
     except WrongHost as e:
