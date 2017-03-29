@@ -4,18 +4,7 @@ import M2Crypto, os, pprint
 from optparse import OptionParser
 from M2Crypto.SSL.Checker import WrongHost
 
-usage = "Usage: %prog HOSTNAME"
-parser = OptionParser(usage)
-
 # Basis for this from https://gist.github.com/zakird/1346293
-
-(options, args) = parser.parse_args()
-
-if len(args) != 1:
-    print "WARNING: HOSTNAME not supplied, using www.google.com\n\n"
-    address = "www.google.com"
-else:
-    address = args[0]
 
 # Keep a list of Excluded SHA256s
 excluded = [ 
@@ -27,7 +16,6 @@ excluded = [
         "ac2b922ecfd5e01711772fea8ed372de9d1e2245fce3f57a9cdbec77296a424b",
         "d6e4e7b9af3bd5a8f2d6321cde26639c25644f7307ce16aad347d9ad53d3ce13"
         ]
-
 
 # Main function that checks an address
 def CheckHost(address, roots):
@@ -43,20 +31,19 @@ def CheckHost(address, roots):
         print "WARNING: %s\n" % e
 
     cert_chain = conn.get_peer_cert_chain()
-    exclude = badcert = False
-
-    print "Certificate Chain Presented by Server:"
+    result = {'exclude': False, 'badcert': False, "badki": False, "certs": [] }
 
     # Iterate over each cert in the presented cert chain
     for cert in cert_chain:
+        exclude = badcert = badki = False
         # If the certs SHA256 is in the excluded list, we can just assume we're going to be fine
         if cert.get_fingerprint("sha256").lower() in excluded:
-            print "Excluded Cert"
+            result['exclude'] = True
             exclude = True
 
         # If the certs SHA256 is in the list of Bad figureprints, we know it's a bad cert in the chain
         if cert.get_fingerprint("sha256").lower() in roots['fingerprints']:
-            print "Found a Bad Cert"
+            result['badcert'] = True
             badcert = True
 
         # For each cert, check it's Authority Key Identifier, if that ID is in the bad Subject Identifier List, then this cert is signed by a bad cert. 
@@ -64,18 +51,14 @@ def CheckHost(address, roots):
         try:
             ki = cert.get_ext("authorityKeyIdentifier").get_value().replace(":", "").lower().strip().replace("keyid", "")
             if ki in roots['identifier']:
-                print "Found Bad Authority Key Identifier"
-                badcert = True
+                result['badki'] = True
+                badki = True
         except LookupError:
             ki = ""
 
-        print "Subject: %s\nFingerprint: %s\nSerial: %02x\nAuthority Key Identifier: %s\n" % (cert.get_subject().as_text(), cert.get_fingerprint("sha256"), cert.get_serial_number(), ki)
+        result['certs'].append({'subject': cert.get_subject().as_text(), 'fingerprint': cert.get_fingerprint("sha256"), 'serialnumber': cert.get_serial_number(), "ki": ki, "exclude": exclude, 'badcert': badcert, 'badki': badki })
 
-    if badcert and not exclude:
-        print "\n*** KNOWN BAD CERT IN THE CHAIN ***"
-    else:
-        print "\nAll Clear"
-
+    return result
 
 def LoadRoots():
     certfp = []
@@ -92,6 +75,33 @@ def LoadRoots():
 
     return {"fingerprints": certfp, "identifier": certki}
 
-rootcas = LoadRoots()
-# pprint.pprint(rootcas)
-CheckHost(address, rootcas)
+if __name__ == "__main__":
+    usage = "Usage: %prog HOSTNAME"
+    parser = OptionParser(usage)
+
+    (options, args) = parser.parse_args()
+
+    if len(args) != 1:
+        print "WARNING: HOSTNAME not supplied, using www.google.com\n\n"
+        address = "www.google.com"
+    else:
+        address = args[0]
+
+    rootcas = LoadRoots()
+#    pprint.pprint(rootcas)
+    result = CheckHost(address, rootcas)
+
+    print "Certificate Chain Presented by Server:"
+    for cert in result['certs']:
+        if cert['exclude']:
+            print "Found an excluded cert"
+        if cert['badcert']:
+            print "Found a bad cert"
+        if cert['badki']:
+            print "Found a bad Authority Key Identifier"
+        print "Subject: %s\nFingerprint: %s\nSerial: %02x\nAuthority Key Identifier: %s\n" % (cert['subject'], cert['fingerprint'], cert['serialnumber'], cert['ki'])
+
+    if (result['badcert'] or result['badki']) and not result['exclude']:
+        print "\n*** KNOWN BAD CERT IN THE CHAIN ***"
+    else:
+        print "\nAll Clear"
