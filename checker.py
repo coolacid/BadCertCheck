@@ -103,5 +103,7 @@ if __name__ == "__main__":
 
     if (result['badcert'] or result['badki']) and not result['exclude']:
         print "\n*** KNOWN BAD CERT IN THE CHAIN ***"
+        exit(1)
     else:
         print "\nAll Clear"
+        exit(0)
